@@ -1,3 +1,4 @@
+// --- Day 1: No Time for a Taxicab ---
 package main
 
 import (
@@ -9,12 +10,14 @@ import (
 	"text/scanner"
 )
 
-// // --- Day 1: No Time for a Taxicab ---
-// const inputSequence string = "R1, R3, L2, L5, L2, L1, R3, L4, R2, L2, L4, R2, L1, R1, L2, R3, L1, L4, R2, L5, R3, R4, L1, R2, L1, R3, L4, R5, L4, L5, R5, L3, R2, L3, L3, R1, R3, L4, R2, R5, L4, R1, L1, L1, R5, L2, R1, L2, R188, L5, L3, R5, R1, L2, L4, R3, R5, L3, R3, R45, L4, R4, R72, R2, R3, L1, R1, L1, L1, R192, L1, L1, L1, L4, R1, L2, L5, L3, R5, L3, R3, L4, L3, R1, R4, L2, R2, R3, L5, R3, L1, R1, R4, L2, L3, R1, R3, L4, L3, L4, L2, L2, R1, R3, L5, L1, R4, R2, L4, L1, R3, R3, R1, L5, L2, R4, R4, R2, R1, R5, R5, L4, L1, R5, R3, R4, R5, R3, L1, L2, L4, R1, R4, R5, L2, L3, R4, L4, R2, L2, L4, L2, R5, R1, R4, R3, R5, L4, L4, L5, L5, R3, R4, L1, L3, R2, L2, R1, L3, L5, R5, R5, R3, L4, L2, R4, R5, R1, R4, L3"
-
 type input struct {
 	direction rune
 	distance  int
+}
+
+type output struct {
+	distanceEnd               int
+	distanceFirstIntersection int
 }
 
 type state struct {
@@ -30,6 +33,13 @@ func main() {
 	}
 
 	inputSequence := os.Args[1]
+	result := run(inputSequence)
+
+	fmt.Println("Day 1 Part 1: ", result.distanceEnd)
+	fmt.Println("Day 1 Part 2: ", result.distanceFirstIntersection)
+}
+
+func run(inputSequence string) output {
 	var instructions []input
 	instructions = parseInstructions(inputSequence)
 
@@ -58,15 +68,12 @@ func main() {
 		}
 	}
 
-	var result1 int
-	var result2 int
-	result1 = computeResult(currentState)
+	var result output
+	result.distanceEnd = computeResult(currentState)
 	if firstIntersectionFound {
-		result2 = computeResult(firstIntersectionState)
+		result.distanceFirstIntersection = computeResult(firstIntersectionState)
 	}
-
-	fmt.Println("Day 1 Part 1: ", result1)
-	fmt.Println("Day 1 Part 2: ", result2)
+	return result
 }
 
 func parseInstructions(inputSequence string) []input {
@@ -148,8 +155,6 @@ func applyInput(s state, i input) []state {
 		sNext.y = sNext.y + yCoef
 		newStates = append(newStates, sNext)
 	}
-
-	//fmt.Println(s, i, sNext)
 
 	return newStates
 }
