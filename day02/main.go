@@ -1,8 +1,6 @@
 package main
 
-import "fmt"
-
-const input = `DLUUULUDLRDDLLLUDULLULLRUURURLUULDUUUDLDDRUDLUULLRLDDURURDDRDRDLDURRURDLDUURULDDULDRDDLDLDLRDRUURLDLUDDDURULRLLLLRLULLUDRDLDUURDURULULULRLULLLULURLRDRDDDDDDDLRLULUULLULURLLDLRLUDULLDLLURUDDLDULDLULDDRLRLRDDLRURLLLURRLDURRDLLUUUUDRURUULRLDRRULLRUDLDRLUDRDRDRRDDURURRDRDRUDURDLUDRUDLRRULDLRDDRURDDUUDLDRDULDDRRURLLULRDRURLRLDLLLUULUUDLUDLDRRRRDUURULDUDUDRLDLLULLLRDDDDDLRDDLLUULLRRRDURLRURDURURLUDRRLRURDRDRRRRULUDLDRDULULRUDULLLUDRRLRLURDDURULDUUDULLURUULRDRDULRUUUDURURDDRRUDURRLRDRULRUUU
+const input1 = `DLUUULUDLRDDLLLUDULLULLRUURURLUULDUUUDLDDRUDLUULLRLDDURURDDRDRDLDURRURDLDUURULDDULDRDDLDLDLRDRUURLDLUDDDURULRLLLLRLULLUDRDLDUURDURULULULRLULLLULURLRDRDDDDDDDLRLULUULLULURLLDLRLUDULLDLLURUDDLDULDLULDDRLRLRDDLRURLLLURRLDURRDLLUUUUDRURUULRLDRRULLRUDLDRLUDRDRDRRDDURURRDRDRUDURDLUDRUDLRRULDLRDDRURDDUUDLDRDULDDRRURLLULRDRURLRLDLLLUULUUDLUDLDRRRRDUURULDUDUDRLDLLULLLRDDDDDLRDDLLUULLRRRDURLRURDURURLUDRRLRURDRDRRRRULUDLDRDULULRUDULLLUDRRLRLURDDURULDUUDULLURUULRDRDULRUUUDURURDDRRUDURRLRDRULRUUU
 LDRURRUUUULDRDDDLLULDRUDDRLLDLDRDLRUDDDLDDULULULLRULDUDRRDLRUURURDRURURDLLRUURDUUDRLDURDRDLRRURURDUUUURUURRLLLDRDUURRRRURULUUUDLUDDRUURRLDULRDULRRRRUDURRLURULRURRDRDLLDRRDUDRDURLDDRURULDRURUDDURDLLLUURRLDRULLURDRDRLDRRURRLRRRDDDDLUDLUDLLDURDURRDUDDLUDLRULRRRDRDDLUDRDURDRDDUURDULRRULDLDLLUDRDDUDUULUDURDRLDURLRRDLDDLURUDRLDUURLLRLUDLLRLDDUDLLLRRRLDLUULLUDRUUDRLDUUUDUURLRDDDDRRDRLDDRDLUDRULDDDRDUULLUUUUULDULRLLLRLLDULRDUDDRDDLRRLRDDULLDURRRURDDUDUDDRLURRLUUUULLDRDULUUDRDULDLLUDLURDLLURRDLUULURRULRLURRRRRUURDDURLRLLDDLRRDUUURDRDUDRDDDLLDDRDRRRLURRDUULULULULRRURDDLDDLLLRUDDDDDDLLLRDULURULLRLRDRR
 DDRLLLDLRRURRDLDDRUURRURRLRRRRUURUURDLURRRDDLRUDRURLUURLLRRLRLURLURURDULLLLDLRURULUUDURRLULRDRDRRDDLLULRLUDLUUUDRLLRRURRLDULDDLRRLUUUUDDLRLDRLRRDRDLDDURDDRDDLDLURLRRRDDUDLLRLRLURRRRULLULLLLDRLDULDLLDULRLDRDLDDRRDDDDRUDRLLURULRLDDLLRRURURDDRLLLULLULDDRDLDDDLRLLDRLDRUURRULURDDRLULLDUURRULURUUDULLRUDDRRLLDLLRDRUDDDDLLLDDDLLUUUULLDUUURULRUUDUUUDDLDURLDRDRRLLUDULDLUDRLLLDRRRULUUDDURUDRLUDDRRLLDUDUURDDRURLUURDURURURRUUDUDDLLLDRRRURURRURDLRULLDUDRLRLLRUDRUDLR
 RRRDRLRURLRRLUURDRLDUURURLRDRRUDLLUUDURULLUURDLLDRRLURRUDUUDRRURLRRDULLDDLRRRUDUUDUUDLDDDLUUDLDULDDULLDUUUUDDUUDUDULLDDURRDLRRUDUDLRDUULDULRURRRLDLLURUDLDDDRRLRDURDLRRLLLRUDLUDRLLLRLLRRURUDLUDURLDRLRUDLRUULDRULLRLDRDRRLDDDURRRUDDDUDRRDRLDDRDRLLRLLRDLRDUDURURRLLULRDRLRDDRUULRDDRLULDLULURDLRUDRRDDDLDULULRDDRUDRLRDDRLDRDDRRRDUURDRLLDDUULRLLLULLDRDUDRRLUUURLDULUUURULLRLUDLDDLRRDLLRDDLRDRUUDURDDLLLDUUULUUDLULDUDULDRLRUDDURLDDRRRDLURRLLRRRUDDLDDRURDUULRUURDRRURURRRUUDUDULUDLUDLLLUUUULRLLRRRRDUDRRDRUDURLUDDLDRDLDDRULLRRULDURUL
@@ -15,35 +13,47 @@ type pos struct {
 }
 
 func main() {
-	keycode1 := part1(input)
+	part1Keypad, part1Pos := part1Keyboard()
+	keycode1 := run(part1Keypad, part1Pos, input1)
+	println("Part1: ", keycode1)
 
-	for _, r := range keycode1 {
-		fmt.Printf("%c", r)
-	}
-
-	println()
-
-	keycode2 := part2(input)
-
-	for _, r := range keycode2 {
-		fmt.Printf("%c", r)
-	}
+	part2Keypad, part2Pos := part2Keyboard()
+	keycode2 := run(part2Keypad, part2Pos, input1)
+	println("Part2: ", keycode2)
 }
 
-func part1(in string) []rune {
+func part1Keyboard() ([][]rune, pos) {
 	keypad := [][]rune{}
+	row1 := []rune{'1', '2', '3'}
+	row2 := []rune{'4', '5', '6'}
+	row3 := []rune{'7', '8', '9'}
+	keypad = append(keypad, row1)
+	keypad = append(keypad, row2)
+	keypad = append(keypad, row3)
+	return keypad, pos{1, 1}
+}
 
-	col1 := []rune{'1', '4', '7'}
-	col2 := []rune{'2', '5', '8'}
-	col3 := []rune{'3', '6', '9'}
+func part2Keyboard() ([][]rune, pos) {
+	keypad := [][]rune{}
+	row1 := []rune{' ', ' ', '1', ' ', ' '}
+	row2 := []rune{' ', '2', '3', '4', ' '}
+	row3 := []rune{'5', '6', '7', '8', '9'}
+	row4 := []rune{' ', 'A', 'B', 'C', ' '}
+	row5 := []rune{' ', ' ', 'D', ' ', ' '}
+	keypad = append(keypad, row1)
+	keypad = append(keypad, row2)
+	keypad = append(keypad, row3)
+	keypad = append(keypad, row4)
+	keypad = append(keypad, row5)
+	return keypad, pos{0, 2}
+}
 
-	keypad = append(keypad, col1)
-	keypad = append(keypad, col2)
-	keypad = append(keypad, col3)
-
-	p := pos{1, 1}
+func run(keypad [][]rune, initial pos, in string) string {
+	maxRow := len(keypad) - 1
+	maxColumn := len(keypad[0]) - 1
 
 	var keycode []rune
+	p := initial
 	for _, c := range in {
 		pNext := p
 
@@ -53,11 +63,11 @@ func part1(in string) []rune {
 				pNext.y = p.y - 1
 			}
 		case 'R':
-			if p.x < 2 {
+			if p.x < maxColumn {
 				pNext.x = p.x + 1
 			}
 		case 'D':
-			if p.y < 2 {
+			if p.y < maxRow {
 				pNext.y = p.y + 1
 			}
 		case 'L':
@@ -65,74 +75,17 @@ func part1(in string) []rune {
 				pNext.x = p.x - 1
 			}
 		case '\n':
-			nexCode := keypad[pNext.x][pNext.y]
-			keycode = append(keycode, nexCode)
+			keycode = append(keycode, keypad[pNext.y][pNext.x])
 		default:
 			continue
 		}
 
-		//fmt.Println(p, fmt.Sprintf("%c", keypad[p.x][p.y]), fmt.Sprintf("%c", c), pNext, fmt.Sprintf("%c", keypad[pNext.x][pNext.y]))
+		if keypad[pNext.y][pNext.x] == ' ' {
+			continue
+		}
 
 		p = pNext
 	}
 
-	return keycode
-}
-
-func part2(in string) []rune {
-
-	// Setup keypad
-	keypad := [][]rune{}
-	col1 := []rune{' ', ' ', '5', ' ', ' '}
-	col2 := []rune{' ', '2', '6', 'A', ' '}
-	col3 := []rune{'1', '3', '7', 'B', 'D'}
-	col4 := []rune{' ', '4', '8', 'C', ' '}
-	col5 := []rune{' ', ' ', '9', ' ', ' '}
-
-	keypad = append(keypad, col1)
-	keypad = append(keypad, col2)
-	keypad = append(keypad, col3)
-	keypad = append(keypad, col4)
-	keypad = append(keypad, col5)
-
-	p := pos{0, 2}
-
-	var keycode []rune
-	for _, c := range in {
-		pNext := p
-
-		switch c {
-		case 'U':
-			if p.y > 0 {
-				pNext.y = p.y - 1
-			}
-		case 'R':
-			if p.x < 4 {
-				pNext.x = p.x + 1
-			}
-		case 'D':
-			if p.y < 4 {
-				pNext.y = p.y + 1
-			}
-		case 'L':
-			if p.x > 0 {
-				pNext.x = p.x - 1
-			}
-		case '\n':
-			nexCode := keypad[pNext.x][pNext.y]
-			keycode = append(keycode, nexCode)
-		default:
-			continue
-		}
-
-		if keypad[pNext.x][pNext.y] == ' ' {
-			continue
-		}
-
-		//fmt.Println(p, fmt.Sprintf("%c", keypad[p.x][p.y]), fmt.Sprintf("%c", c), pNext, fmt.Sprintf("%c", keypad[pNext.x][pNext.y]))
-
-		p = pNext
-	}
-
-	return keycode
+	return string(keycode)
 }
