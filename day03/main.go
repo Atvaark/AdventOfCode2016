@@ -11,9 +11,22 @@ type shape struct {
 }
 
 func main() {
-	file, error := os.Open("input.txt")
+	shapes, error := openShapeFile("input.txt")
 	if error != nil {
-		panic(error)
+		fmt.Printf("unable to open input: %v", error)
+		os.Exit(1)
+	}
+
+	part1Count := part1(shapes)
+	fmt.Println("Part1: ", part1Count)
+	part2Count := part2(shapes)
+	fmt.Println("Part2: ", part2Count)
+}
+
+func openShapeFile(name string) ([]shape, error) {
+	file, error := os.Open(name)
+	if error != nil {
+		return nil, error
 	}
 
 	defer file.Close()
@@ -29,19 +42,16 @@ func main() {
 		shapes = append(shapes, s)
 	}
 
-	part1(shapes)
-	part2(shapes)
+	return shapes, nil
 }
 
-func part1(shapes []shape) {
-	count := countTriangles(shapes)
-	fmt.Println("Part1: ", count)
+func part1(shapes []shape) int {
+	return countTriangles(shapes)
 }
 
-func part2(shapes []shape) {
+func part2(shapes []shape) int {
 	pivoted := pivot(shapes)
-	count := countTriangles(pivoted)
-	fmt.Println("Part2: ", count)
+	return countTriangles(pivoted)
 }
 
 func pivot(shapes []shape) []shape {
