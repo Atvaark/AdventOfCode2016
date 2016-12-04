@@ -13,13 +13,47 @@ type room struct {
 	name     string
 	sectorID int
 	checksum string
+	isReal   bool
 }
 
 func main() {
-	file, error := os.Open("input.txt")
+	rooms, error := openRoomsFile("input.txt")
 	if error != nil {
 		fmt.Printf("unable to read input: %v", error)
 		os.Exit(1)
+	}
+
+	part1Result := part1(rooms)
+	fmt.Println("part1: ", part1Result)
+
+	part2Result := part2(rooms)
+	fmt.Println("part2: ", part2Result)
+}
+
+func part1(rooms []room) int {
+	var sumSectorIDs int
+	for _, room := range rooms {
+		if room.isReal {
+			sumSectorIDs = sumSectorIDs + room.sectorID
+		}
+	}
+	return sumSectorIDs
+}
+
+func part2(rooms []room) int {
+	for _, room := range rooms {
+		if room.name == "northpole object storage" {
+			return room.sectorID
+		}
+	}
+
+	return -1
+}
+
+func openRoomsFile(name string) ([]room, error) {
+	file, error := os.Open(name)
+	if error != nil {
+		return nil, error
 	}
 
 	scanner := bufio.NewScanner(file)
@@ -29,23 +63,12 @@ func main() {
 	for scanner.Scan() {
 		line := scanner.Text()
 		room := parseRoom(line)
+		checkIsRealRoom(&room)
+		decryptName(&room)
 		rooms = append(rooms, room)
 	}
 
-	var sumSectorIDs int
-	for _, room := range rooms {
-		if checkIsRealRoom(room) {
-			sumSectorIDs = sumSectorIDs + room.sectorID
-		}
-
-		decryptName(&room)
-
-		if room.name == "northpole object storage" {
-			fmt.Println("part2: ", room.sectorID)
-		}
-	}
-
-	fmt.Println("part1: ", sumSectorIDs)
+	return rooms, nil
 }
 
 func decryptName(r *room) {
@@ -68,13 +91,13 @@ func decryptName(r *room) {
 	r.name = string(decrypted[:])
 }
 
-func checkIsRealRoom(r room) bool {
+func checkIsRealRoom(r *room) {
 	checksum := calculateChecksum(r.name)
-	return r.checksum == checksum
+	r.isReal = r.checksum == checksum
 }
 
 func calculateChecksum(name string) string {
-	// count
+	// count chars
 	charCountMap := make(map[rune]int)
 	for _, char := range name {
 		if char == '-' {
@@ -84,7 +107,7 @@ func calculateChecksum(name string) string {
 		charCountMap[char] = charCountMap[char] + 1
 	}
 
-	// swap char and count
+	// swap char and count pairs
 	countCharsMap := make(map[int][]rune)
 	for char, count := range charCountMap {
 		chars := countCharsMap[count]
@@ -92,26 +115,27 @@ func calculateChecksum(name string) string {
 		countCharsMap[count] = chars
 	}
 
-	// sort counts desc
+	// sort counts descending
 	var counts []int
 	for count := range countCharsMap {
 		counts = append(counts, count)
 	}
 	sort.Sort(sort.Reverse(sort.IntSlice(counts)))
 
-	resultIndex := 0
-	var result [5]rune
+	checksumIndex := 0
+	var checksum [5]rune
 	for _, count := range counts {
 		// sort chars alphabetically
 		var chars runes
 		chars = countCharsMap[count]
 		sort.Sort(chars)
 
+		// build result
 		for _, char := range chars {
-			result[resultIndex] = char
-			resultIndex = resultIndex + 1
-			if resultIndex > 4 {
-				return string(result[:])
+			checksum[checksumIndex] = char
+			checksumIndex = checksumIndex + 1
+			if checksumIndex > 4 {
+				return string(checksum[:])
 			}
 		}
 	}
