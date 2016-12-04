@@ -3,6 +3,7 @@ package main
 
 import (
 	"fmt"
+	"io/ioutil"
 	"math"
 
 	"os"
@@ -27,16 +28,25 @@ type state struct {
 }
 
 func main() {
-	if len(os.Args) < 2 {
-		fmt.Println("no sequence specified")
-		return
+	inputSequence, error := openInput("input.txt")
+	if error != nil {
+		fmt.Printf("unable to open input: %v", error)
+		os.Exit(1)
 	}
 
-	inputSequence := os.Args[1]
 	result := run(inputSequence)
 
 	fmt.Println("Day 1 Part 1: ", result.distanceEnd)
 	fmt.Println("Day 1 Part 2: ", result.distanceFirstIntersection)
+}
+
+func openInput(name string) (string, error) {
+	inputData, error := ioutil.ReadFile(name)
+	if error != nil {
+		return "", error
+	}
+
+	return string(inputData), nil
 }
 
 func run(inputSequence string) output {

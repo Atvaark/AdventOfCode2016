@@ -56,6 +56,8 @@ func openRoomsFile(name string) ([]room, error) {
 		return nil, error
 	}
 
+	defer file.Close()
+
 	scanner := bufio.NewScanner(file)
 	scanner.Split(bufio.ScanLines)
 
