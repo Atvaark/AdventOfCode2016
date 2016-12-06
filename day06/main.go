@@ -7,46 +7,67 @@ import (
 )
 
 func main() {
-	file, error := os.Open("input.txt")
-	_ = error
+	lines, error := openInput("input.txt")
+	if error != nil {
+		fmt.Printf("unable to read input: %v", error)
+		os.Exit(1)
+	}
+
+	part1Result, part2Result := run(lines)
+
+	fmt.Println("max: ", part1Result)
+	fmt.Println("min: ", part2Result)
+}
+
+func openInput(name string) ([]string, error) {
+	file, error := os.Open(name)
+	if error != nil {
+		return nil, error
+	}
 
 	scanner := bufio.NewScanner(file)
 	scanner.Split(bufio.ScanLines)
 
-	m := make(map[int]map[rune]int)
-	messageCount := 0
+	var result []string
 	for scanner.Scan() {
-		line := scanner.Text()
+		result = append(result, scanner.Text())
+	}
 
-		for i, r := range line {
-			m1 := m[i]
+	return result, nil
+}
+
+func run(messages []string) (part1Result string, part2Result string) {
+	m := make(map[int]map[rune]int)
+	//messageCount := 0
+	for _, message := range messages {
+		for msgIdx, msgRune := range message {
+			m1 := m[msgIdx]
 			if m1 == nil {
 				m1 = make(map[rune]int)
-				m[i] = m1
+				m[msgIdx] = m1
 			}
 
-			m[i][r] = m[i][r] + 1
-			messageCount++
+			m[msgIdx][msgRune] = m[msgIdx][msgRune] + 1
+			//messageCount++
 		}
 	}
 
-	iMax := -1
+	msgIdxMax := -1
 	for i := range m {
-		if i > iMax {
-			iMax = i
+		if i > msgIdxMax {
+			msgIdxMax = i
 		}
 	}
 
-	maxResult := make([]rune, iMax+1)
-	minResult := make([]rune, iMax+1)
+	maxResult := make([]rune, msgIdxMax+1)
+	minResult := make([]rune, msgIdxMax+1)
 
 	for i, m2 := range m {
-
 		rMax := '?'
 		rMaxCount := -1
 
 		rMin := '?'
-		rMinCount := messageCount + 1
+		rMinCount := len(messages) + 1
 
 		for r, c := range m2 {
 			if c > rMaxCount {
@@ -67,6 +88,5 @@ func main() {
 	maxResultString := string(maxResult[:])
 	minResultString := string(minResult[:])
 
-	fmt.Println("max: ", maxResultString)
-	fmt.Println("min: ", minResultString)
+	return maxResultString, minResultString
 }
