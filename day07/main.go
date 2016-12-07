@@ -9,24 +9,28 @@ import (
 func main() {
 	addresses, error := openInput("input.txt")
 	if error != nil {
+		fmt.Printf("unable to open input: %v", error)
 		os.Exit(1)
 	}
 
-	var abbaCount int
-	var sslCount int
+	tlsCount, sslCount := getFeatureCount(addresses)
+	fmt.Println("result1: ", tlsCount)
+	fmt.Println("result2: ", sslCount)
+}
+
+func getFeatureCount(addresses []string) (TLScount int, SSKcount int) {
 	for _, address := range addresses {
-		tls, ssl := getSupports(address)
+		tls, ssl := getFeatures(address)
 		if tls {
-			abbaCount++
+			TLScount++
 		}
 
 		if ssl {
-			sslCount++
+			SSKcount++
 		}
 	}
 
-	fmt.Println("result1: ", abbaCount)
-	fmt.Println("result2: ", sslCount)
+	return
 }
 
 func openInput(name string) ([]string, error) {
@@ -46,7 +50,7 @@ func openInput(name string) ([]string, error) {
 	return result, nil
 }
 
-func getSupports(address string) (supportsTLS bool, supportsSSL bool) {
+func getFeatures(address string) (supportsTLS bool, supportsSSL bool) {
 	l := len(address)
 
 	abba := false
@@ -61,15 +65,17 @@ func getSupports(address string) (supportsTLS bool, supportsSSL bool) {
 	for i := 0; i < l-2; i++ {
 		if address[i] == '[' {
 			inBracket = true
+			continue
 		}
 
 		if address[i] == ']' {
 			inBracket = false
+			continue
 		}
 
 		if i+3 < l {
 			abbaRange := address[i : i+4]
-			if abbaRange[0] != '[' && abbaRange[0] != abbaRange[1] && abbaRange[0] == abbaRange[3] && abbaRange[1] == abbaRange[2] {
+			if abbaRange[0] != abbaRange[1] && abbaRange[0] == abbaRange[3] && abbaRange[1] == abbaRange[2] {
 				if inBracket {
 					hypernetAbba = true
 				} else {
@@ -79,7 +85,7 @@ func getSupports(address string) (supportsTLS bool, supportsSSL bool) {
 		}
 
 		sslRange := address[i : i+3]
-		if sslRange[0] != '[' && sslRange[0] != sslRange[1] && sslRange[0] == sslRange[2] {
+		if sslRange[0] != sslRange[1] && sslRange[0] == sslRange[2] {
 			if inBracket {
 				babs = append(babs, sslRange)
 			} else {
