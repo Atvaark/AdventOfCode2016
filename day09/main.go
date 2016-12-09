@@ -75,69 +75,45 @@ func part1(line string) int {
 }
 
 func part2(line string) int {
-	type state struct {
-		resultBuffer     bytes.Buffer
-		markerBuffer     bytes.Buffer
-		repeatDataBuffer bytes.Buffer
-		inMarker         bool
-		repeatDataLen    int
-		repeatDataCount  int
-		decompressedLen  int
-	}
+	lineData := []byte(line)
+	startIndex := 0
+	lineLength := len(lineData)
+	return sum(&lineData, lineLength, startIndex, lineLength)
+}
 
-	var s state
-	var handle func(char rune, s *state)
-	handle = func(char rune, s *state) {
-		if s.repeatDataLen == 0 && char == '(' {
-			s.inMarker = true
-			return
-		}
+func sum(line *[]byte, lineLength int, sectionStart int, sectionLength int) int {
+	var count int
+	for i := sectionStart; i < sectionStart+sectionLength && i < lineLength; {
+		char := (*line)[i]
+		if char == '(' {
+			i++
 
-		if s.inMarker && char == ')' {
-			s.inMarker = false
-			mark := s.markerBuffer.String()
-			fmt.Sscanf(mark, "%dx%d", &s.repeatDataLen, &s.repeatDataCount)
-			s.markerBuffer.Reset()
-			return
-		}
-
-		if s.inMarker {
-			s.markerBuffer.WriteRune(char)
-			return
-		}
-
-		if s.repeatDataLen > 0 {
-			s.repeatDataBuffer.WriteRune(char)
-			s.repeatDataLen--
-			if s.repeatDataLen == 0 {
-				data := s.repeatDataBuffer.String()
-				s.repeatDataBuffer.Reset()
-
-				var repeatedDataBuffer bytes.Buffer
-				for i := 0; i < s.repeatDataCount; i++ {
-					repeatedDataBuffer.WriteString(data)
+			var marker []byte
+			for i < sectionStart+sectionLength && i < lineLength {
+				char = (*line)[i]
+				if char == ')' {
+					i++
+					break
 				}
-				repeatedData := repeatedDataBuffer.String()
-				repeatedDataBuffer.Reset()
 
-				for _, repeatedChar := range repeatedData {
-					handle(repeatedChar, s)
-				}
+				marker = append(marker, char)
+				i++
 			}
 
-			return
+			markerString := string(marker)
+			var repeatDataLen int
+			var repeatDataCount int
+			fmt.Sscanf(markerString, "%dx%d", &repeatDataLen, &repeatDataCount)
+
+			count += sum(line, lineLength, i, repeatDataLen) * repeatDataCount
+
+			i += repeatDataLen
+		} else {
+			count++
+			i++
 		}
-
-		s.decompressedLen++
 	}
-
-	for _, char := range line {
-		handle(char, &s)
-	}
-
-	//result := s.resultBuffer.String()
-	//fmt.Printf("raw: %v decomp: %v len: %d %d\n", line, result, len(result), s.decompressedLength)
-	return s.decompressedLen
+	return count
 }
 
 func openInput(name string) ([]string, error) {
