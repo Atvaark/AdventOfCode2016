@@ -56,14 +56,18 @@ func main() {
 		os.Exit(1)
 	}
 
+	part1Result, part2Result := run(bots)
+	fmt.Printf("part 1: %d\n", part1Result)
+	fmt.Printf("part 2: %d\n", part2Result)
+}
+
+func run(bots map[int]*bot) (int, int) {
 	outChan := make(chan output)
 	cmpChan := make(chan comparison)
 	doneChan := make(chan bool)
-	go run(bots, outChan, cmpChan, doneChan)
-
+	go startBots(bots, outChan, cmpChan, doneChan)
 	part1Result, part2Result := calcResults(outChan, cmpChan, doneChan)
-	fmt.Printf("part 1: %d\n", part1Result)
-	fmt.Printf("part 2: %d\n", part2Result)
+	return part1Result, part2Result
 }
 
 func calcResults(outChan chan output, cmpChan chan comparison, doneChan chan bool) (int, int) {
@@ -187,7 +191,7 @@ func parseInstruction(line string) instruction {
 	return result
 }
 
-func run(bots map[int]*bot, outChan chan output, cmpChan chan comparison, doneChan chan bool) {
+func startBots(bots map[int]*bot, outChan chan output, cmpChan chan comparison, doneChan chan bool) {
 	var botIDs []int
 	for botID := range bots {
 		botIDs = append(botIDs, botID)
