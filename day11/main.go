@@ -21,13 +21,11 @@ func main() {
 	fmt.Printf("Step count : %d\n", stepCount)
 }
 
-type arrangement struct {
-	items []item
-}
+type arrangement []item
 
 func (a arrangement) String() string {
 	var buffer bytes.Buffer
-	for _, i := range a.items {
+	for _, i := range a {
 		buffer.WriteString(i.String())
 		buffer.WriteString(" ")
 	}
@@ -55,6 +53,8 @@ func (i item) String() string {
 		element = "L"
 	case plutonium:
 		element = "P"
+	case promethium:
+		element = "O"
 	case ruthenium:
 		element = "R"
 	case strontium:
@@ -100,6 +100,7 @@ const (
 	hydrogen
 	lithium
 	plutonium
+	promethium
 	ruthenium
 	strontium
 	thulium
@@ -114,7 +115,7 @@ func openInput() arrangement {
 	// TODO: Parse input
 
 	var input arrangement
-	input.items = []item{
+	input = []item{
 		item{elementID: noElement, typeID: elevator, floorID: 1},
 		item{elementID: strontium, typeID: generator, floorID: 1},
 		item{elementID: strontium, typeID: microchip, floorID: 1},
@@ -130,10 +131,10 @@ func openInput() arrangement {
 		item{elementID: thulium, typeID: microchip, floorID: 3},
 
 		// part2
-		item{elementID: elerium, typeID: generator, floorID: 1},
-		item{elementID: elerium, typeID: microchip, floorID: 1},
-		item{elementID: dilithium, typeID: generator, floorID: 1},
-		item{elementID: dilithium, typeID: microchip, floorID: 1},
+		// item{elementID: elerium, typeID: generator, floorID: 1},
+		// item{elementID: elerium, typeID: microchip, floorID: 1},
+		// item{elementID: dilithium, typeID: generator, floorID: 1},
+		// item{elementID: dilithium, typeID: microchip, floorID: 1},
 
 		// Test
 		// item{elementID: noElement, typeID: elevator, floorID: 1},
@@ -145,21 +146,21 @@ func openInput() arrangement {
 		// item{elementID: lithium, typeID: generator, floorID: 3},
 	}
 
-	reorder(input)
+	input = reorder(input)
 	return input
 }
 
-type byTypes []item
+type orderedItems []item
 
-func (s byTypes) Len() int {
+func (s orderedItems) Len() int {
 	return len(s)
 }
 
-func (s byTypes) Swap(i, j int) {
+func (s orderedItems) Swap(i, j int) {
 	s[i], s[j] = s[j], s[i]
 }
 
-func (s byTypes) Less(i, j int) bool {
+func (s orderedItems) Less(i, j int) bool {
 	if s[i].floorID < s[j].floorID {
 		return true
 	}
@@ -179,16 +180,17 @@ func (s byTypes) Less(i, j int) bool {
 	return s[i].typeID < s[j].typeID
 }
 
-func reorder(a arrangement) {
-	a.items = reorderItems(a.items)
+func reorder(a arrangement) arrangement {
+	a = reorderItems(a)
+	return a
 }
 
 func reorderItems(items []item) []item {
-	sort.Sort(byTypes(items))
+	sort.Sort(orderedItems(items))
 	return items
 }
 
-func isDone(items []item) bool {
+func isEndArrangement(items []item) bool {
 	for _, i := range items {
 		if i.floorID != topFloorIndex {
 			return false
@@ -196,6 +198,21 @@ func isDone(items []item) bool {
 	}
 
 	return true
+}
+
+func printDebug(checkedNodes map[string]bool, nodeQueues map[int][]arrangementNode, currentDistance int) {
+	// fmt.Println("max distance increased to ", currentDistance)
+	// fmt.Println()
+	// fmt.Println("New:")
+	// for k, v := range nodeQueues {
+	// 	l := len(v)
+	// 	if l > 0 {
+	// 		fmt.Println("key: ", k, " len: ", len(v))
+	// 	}
+	// }
+
+	// fmt.Println()
+	// fmt.Println("Checked: ", len(checkedNodes))
 }
 
 func run(root arrangement) int {
@@ -215,7 +232,7 @@ func run(root arrangement) int {
 
 		if len(nodeQueue) == 0 {
 			currentDistance++
-			//fmt.Println("max distance increased to ", currentDistance)
+			printDebug(checkedNodes, nodeQueues, currentDistance)
 			continue
 		}
 
@@ -223,12 +240,12 @@ func run(root arrangement) int {
 		node = nodeQueue[0]
 		nodeQueue = nodeQueue[1:]
 		nodeQueues[currentDistance] = nodeQueue
-		nextNodes := step(node)
+		nextNodes := getNextNodes(node)
 		for _, nextNode := range nextNodes {
-			if isDone(nextNode.arr.items) {
+			if isEndArrangement(nextNode.arr) {
 				exitNodes = append(exitNodes, nextNode)
 			} else {
-				nextNodeKey := nextNode.arr.String()
+				nextNodeKey := nextNode.arr.String() // TODO: Optimize memory allocations by using the arrangement as a key
 				_, ok := checkedNodes[nextNodeKey]
 				if !ok {
 					nextNodeQueue, ok := nodeQueues[nextNode.distance]
@@ -244,6 +261,7 @@ func run(root arrangement) int {
 
 		}
 	}
+
 	for _, finalNode := range exitNodes {
 		if minDistance == -1 || finalNode.distance < minDistance {
 			minDistance = finalNode.distance
@@ -253,10 +271,9 @@ func run(root arrangement) int {
 	return minDistance
 }
 
-func step(node arrangementNode) []arrangementNode {
+func getNextNodes(node arrangementNode) []arrangementNode {
 	var nextNodes = make([]arrangementNode, 0)
-	items := node.arr.items
-
+	items := node.arr
 	elevatorFloor := -1
 	for _, item := range items {
 		if item.typeID == elevator {
@@ -274,17 +291,17 @@ func step(node arrangementNode) []arrangementNode {
 		canGoDown := elevatorFloor > minFloor
 
 		if canGoUp {
-			next := apply(items, floorPerm, 1)
+			next := applyChange(items, floorPerm, 1)
 			if validateItems(next) {
-				nextArrangement := arrangementNode{arr: arrangement{items: next}, distance: node.distance + 1}
+				nextArrangement := arrangementNode{arr: next, distance: node.distance + 1}
 				nextNodes = append(nextNodes, nextArrangement)
 			}
 		}
 
 		if canGoDown {
-			next := apply(items, floorPerm, -1)
+			next := applyChange(items, floorPerm, -1)
 			if validateItems(next) {
-				nextArrangement := arrangementNode{arr: arrangement{items: next}, distance: node.distance + 1}
+				nextArrangement := arrangementNode{arr: next, distance: node.distance + 1}
 				nextNodes = append(nextNodes, nextArrangement)
 			}
 		}
@@ -387,11 +404,11 @@ func getMinFloor(items []item) int {
 	return result
 }
 
-func apply(items []item, permItems []item, dir int) []item {
-	next := make([]item, len(items))
-	copy(next, items)
+func applyChange(base []item, changes []item, dir int) []item {
+	next := make([]item, len(base)) // TODO: Optimize memory allocation. These allocations someone don't get cleaned by the garbage collection.
+	copy(next, base)
 
-	for _, floorPermItem := range permItems {
+	for _, floorPermItem := range changes {
 		for nextItemIndex, nextItem := range next {
 			if itemEquals(nextItem, floorPermItem) {
 				nextItem.floorID = nextItem.floorID + dir
