@@ -5,11 +5,11 @@ import (
 	"fmt"
 	"os"
 	"strings"
-	"unicode/utf8"
 )
 
 type instruction interface {
 	apply(input string) string
+	reverseApply(input string) string
 }
 
 func main() {
@@ -22,19 +22,30 @@ func main() {
 	inputPart1 := "abcdefgh"
 	resultPart1 := run(instructions, inputPart1)
 	fmt.Println("result part 1: ", resultPart1)
+
+	inputPart2 := "fbgdceah"
+	resultPart2 := runReverse(instructions, inputPart2)
+	fmt.Println("result part 2: ", resultPart2)
 }
 
 func run(instructions []instruction, input string) string {
-	c := input
+	password := input
 	for _, inst := range instructions {
-		c = inst.apply(c)
+		password = inst.apply(password)
 	}
+	return password
+}
 
-	return c
+func runReverse(instructions []instruction, input string) string {
+	password := input
+	for i := len(instructions) - 1; i >= 0; i-- {
+		inst := instructions[i]
+		password = inst.reverseApply(password)
+	}
+	return password
 }
 
 func openInput(name string) ([]instruction, error) {
-
 	file, error := os.Open(name)
 	if error != nil {
 		return nil, error
@@ -48,144 +59,187 @@ func openInput(name string) ([]instruction, error) {
 	var instructions []instruction
 	for scanner.Scan() {
 		line := scanner.Text()
-		i := parseInstruction(line)
-		instructions = append(instructions, i)
+		instr := parseInstruction(line)
+		instructions = append(instructions, instr)
 	}
 
 	return instructions, nil
 }
 
 type swapPos struct {
-	p1 int
-	p2 int
+	x int
+	y int
 }
 
 func (i swapPos) apply(input string) string {
 	work := []rune(input)
-	tmp := work[i.p1]
-	work[i.p1] = work[i.p2]
-	work[i.p2] = tmp
+	tmp := work[i.x]
+	work[i.x] = work[i.y]
+	work[i.y] = tmp
 	return string(work)
 }
 
+func (i swapPos) reverseApply(input string) string {
+	tmp := i.x
+	i.x = i.y
+	i.y = tmp
+	return i.apply(input)
+}
+
 type swapLetter struct {
-	l1 rune
-	l2 rune
+	x rune
+	y rune
 }
 
 func (i swapLetter) apply(input string) string {
 	work := []rune(input)
-	var p1, p2 int
+	var x, y int
 
 	for j, r := range work {
-		if r == i.l1 {
-			p1 = j
+		if r == i.x {
+			x = j
 			continue
 		}
 
-		if r == i.l2 {
-			p2 = j
+		if r == i.y {
+			y = j
 			continue
 		}
 	}
 
-	tmp := work[p1]
-	work[p1] = work[p2]
-	work[p2] = tmp
+	tmp := work[x]
+	work[x] = work[y]
+	work[y] = tmp
 	return string(work)
 }
 
+func (i swapLetter) reverseApply(input string) string {
+	tmp := i.x
+	i.x = i.y
+	i.y = tmp
+	return i.apply(input)
+}
+
 type rotateBased struct {
-	l rune
+	x rune
 }
 
 func (i rotateBased) apply(input string) string {
 	work := []rune(input)
-	var p int
+	var xPos int
 	for j, r := range work {
-		if r == i.l {
-			p = j
+		if r == i.x {
+			xPos = j
 			break
 		}
 	}
 
 	rotationCount := 1
-	rotationCount += p
-	if p >= 4 {
+	rotationCount += xPos
+	if xPos >= 4 {
 		rotationCount++
 	}
 
-	tmp := rotateDirection{dir: "right", s: rotationCount}
+	tmp := rotateDirection{direction: "right", x: rotationCount}
 	return tmp.apply(input)
 }
 
+func (i rotateBased) reverseApply(input string) string {
+	for j := len(input) - 1; j >= 0; j-- {
+		reverseInstr := rotateDirection{direction: "left", x: j}
+		reversed := reverseInstr.apply(input)
+		reversedReversed := i.apply(reversed)
+		if input != reversed && input == reversedReversed {
+			return reversed
+		}
+	}
+
+	return input
+}
+
 type rotateDirection struct {
-	dir string
-	s   int
+	direction string
+	x         int
 }
 
 func (i rotateDirection) apply(input string) string {
 	work := []rune(input)
-	by := i.s % len(work)
+	rotationCount := i.x % len(work)
 
 	var left, right []rune
-	switch i.dir {
+	switch i.direction {
 	case "right":
-		// abcd 1
-		// d abc
-		left = work[len(work)-by:]
-		right = work[:len(work)-by]
+		left = work[len(work)-rotationCount:]
+		right = work[:len(work)-rotationCount]
 	case "left":
-		// abcd 1
-		// bcda
-		left = work[by:]
-		right = work[:by]
+		left = work[rotationCount:]
+		right = work[:rotationCount]
 	}
 
-	out := append(left, right...)
-	return string(out)
+	result := append(left, right...)
+	return string(result)
+}
+
+func (i rotateDirection) reverseApply(input string) string {
+	switch i.direction {
+	case "right":
+		i.direction = "left"
+	case "left":
+		i.direction = "right"
+	}
+
+	return i.apply(input)
 }
 
 type reverse struct {
-	p1 int
-	p2 int
+	x int
+	y int
 }
 
 func (i reverse) apply(input string) string {
 	work := []rune(input)
-	before := work[:i.p1]
-	between := work[i.p1 : i.p2+1]
-	after := work[i.p2+1:]
-	betweenReversed := make([]rune, len(between))
-	for i := 0; i < len(between); i++ {
-		betweenReversed[i] = between[len(between)-i-1]
+	left := work[:i.x]
+	middle := work[i.x : i.y+1]
+	right := work[i.y+1:]
+	middleReversed := make([]rune, len(middle))
+	for i := 0; i < len(middle); i++ {
+		middleReversed[i] = middle[len(middle)-i-1]
 	}
 
-	sum := append(before, betweenReversed...)
-	sum = append(sum, after...)
-	return string(sum)
+	result := append(left, middleReversed...)
+	result = append(result, right...)
+	return string(result)
+}
+
+func (i reverse) reverseApply(input string) string {
+	return i.apply(input)
 }
 
 type move struct {
-	p1 int
-	p2 int
+	x int
+	y int
 }
 
 func (i move) apply(input string) string {
 	work := []rune(input)
 
-	tmp := work[i.p1]
-	workTmp := make([]rune, 0, len(work))
+	middle := work[i.x]
+	work = append(work[:i.x], work[i.x+1:]...)
+	left := work[:i.y]
+	right := work[i.y:]
 
-	work = append(work[:i.p1], work[i.p1+1:]...)
-	work1 := work[:i.p2]
-	work2 := work[i.p2:]
-	workTmp = append(workTmp, work1...)
-	workTmp = append(workTmp, tmp)
-	workTmp = append(workTmp, work2...)
-	return string(workTmp)
+	result := make([]rune, 0, len(work))
+	result = append(result, left...)
+	result = append(result, middle)
+	result = append(result, right...)
+	return string(result)
+}
 
-	return input
+func (i move) reverseApply(input string) string {
+	tmp := i.x
+	i.x = i.y
+	i.y = tmp
+	return i.apply(input)
 }
 
 func parseInstruction(line string) instruction {
@@ -194,56 +248,39 @@ func parseInstruction(line string) instruction {
 	case "swap":
 		switch split[1] {
 		case "position":
-			// swap position 4 with position 0
-			var p1, p2 int
-			fmt.Sscanf(split[2], "%d", &p1)
-			fmt.Sscanf(split[5], "%d", &p2)
-
-			// fmt.Printf("swap p %d with %d\n", p1, p2)
-			return swapPos{p1, p2}
+			var x, y int
+			fmt.Sscanf(split[2], "%d", &x)
+			fmt.Sscanf(split[5], "%d", &y)
+			return swapPos{x, y}
 		case "letter":
-			// swap letter d with letter b
-			var l1, l2 rune
-			l1, _ = utf8.DecodeRuneInString(split[2])
-			l2, _ = utf8.DecodeRuneInString(split[5])
-			// fmt.Printf("swap letter %c with %c\n", l1, l2)
-			return swapLetter{l1, l2}
+			var x, y rune
+			x = []rune(split[2])[0]
+			y = []rune(split[5])[0]
+			return swapLetter{x, y}
 		}
 	case "rotate":
 		switch split[1] {
 		case "based":
-			// rotate based on position of letter b
-			// rotate based on position of letter d
-			var l rune
-			l, _ = utf8.DecodeRuneInString(split[6])
-			// fmt.Printf("rotate based on %c\n", l)
-			return rotateBased{l}
+			var x rune
+			x = []rune(split[6])[0]
+			return rotateBased{x}
 		default:
-			// rotate left 1 step
-			d := split[1]
+			x := split[1]
 			var p int
 			fmt.Sscanf(split[2], "%d", &p)
-
-			// fmt.Printf("rotate %s %d\n", d, p)
-			return rotateDirection{d, p}
+			return rotateDirection{x, p}
 		}
 
 	case "reverse":
-		// reverse positions 0 through 4
-		var p1, p2 int
-		fmt.Sscanf(split[2], "%d", &p1)
-		fmt.Sscanf(split[4], "%d", &p2)
-
-		// fmt.Printf("reverse %d through %d\n", p1, p2)
-		return reverse{p1, p2}
+		var x, y int
+		fmt.Sscanf(split[2], "%d", &x)
+		fmt.Sscanf(split[4], "%d", &y)
+		return reverse{x, y}
 	case "move":
-		// move position 1 to position 4
-		// move position 3 to position 0
-		var p1, p2 int
-		fmt.Sscanf(split[2], "%d", &p1)
-		fmt.Sscanf(split[5], "%d", &p2)
-		// fmt.Printf("move %d to %d\n", p1, p2)
-		return move{p1, p2}
+		var x, y int
+		fmt.Sscanf(split[2], "%d", &x)
+		fmt.Sscanf(split[5], "%d", &y)
+		return move{x, y}
 	}
 
 	return nil

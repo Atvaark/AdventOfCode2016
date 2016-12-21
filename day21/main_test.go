@@ -19,6 +19,23 @@ func TestRun(t *testing.T) {
 	}
 }
 
+func TestRunReverse(t *testing.T) {
+
+	instructions, err := openInput("input.txt")
+	if err != nil {
+		t.Errorf("unable to open input: %v", err)
+		return
+	}
+
+	inputPart2 := "fbgdceah"
+	actual := runReverse(instructions, inputPart2)
+
+	const expected = "egcdahbf"
+	if actual != expected {
+		t.Errorf("invalid result. got '%v' expected '%v'", actual, expected)
+	}
+}
+
 func TestInstrSwapPos(t *testing.T) {
 	i := swapPos{4, 0}
 	in := "abcde"
@@ -28,15 +45,26 @@ func TestInstrSwapPos(t *testing.T) {
 	if actual != expected {
 		t.Errorf("invalid result. got '%v' expected '%v'", actual, expected)
 	}
+
+	reversed := i.apply(actual)
+	if reversed != in {
+		t.Errorf("invalid result. got '%v' expected '%v'", actual, expected)
+	}
+
 }
 
 func TestInstrSwapLetter(t *testing.T) {
-	i := swapLetter{l1: 'd', l2: 'b'}
+	i := swapLetter{x: 'd', y: 'b'}
 	in := "ebcda"
 
 	actual := i.apply(in)
 	const expected = "edcba"
 	if actual != expected {
+		t.Errorf("invalid result. got '%v' expected '%v'", actual, expected)
+	}
+
+	reversed := i.apply(actual)
+	if reversed != in {
 		t.Errorf("invalid result. got '%v' expected '%v'", actual, expected)
 	}
 }
@@ -50,6 +78,11 @@ func TestInstrReverse(t *testing.T) {
 	if actual != expected {
 		t.Errorf("invalid result. got '%v' expected '%v'", actual, expected)
 	}
+
+	reversed := i.apply(actual)
+	if reversed != in {
+		t.Errorf("invalid result. got '%v' expected '%v'", actual, expected)
+	}
 }
 
 func TestInstrRotateDirection(t *testing.T) {
@@ -59,6 +92,27 @@ func TestInstrRotateDirection(t *testing.T) {
 	actual := i.apply(in)
 	const expected = "bcdea"
 	if actual != expected {
+		t.Errorf("invalid result. got '%v' expected '%v'", actual, expected)
+	}
+
+	reversed := i.reverseApply(actual)
+	if reversed != in {
+		t.Errorf("invalid result. got '%v' expected '%v'", actual, expected)
+	}
+}
+
+func TestInstrRotateBased(t *testing.T) {
+	i := rotateBased{'b'}
+	in := "abdec"
+
+	actual := i.apply(in)
+	const expected = "ecabd"
+	if actual != expected {
+		t.Errorf("invalid result. got '%v' expected '%v'", actual, expected)
+	}
+
+	reversed := i.reverseApply(actual)
+	if reversed != in {
 		t.Errorf("invalid result. got '%v' expected '%v'", actual, expected)
 	}
 }
@@ -72,15 +126,9 @@ func TestInstrMove(t *testing.T) {
 	if actual != expected {
 		t.Errorf("invalid result. got '%v' expected '%v'", actual, expected)
 	}
-}
 
-func TestInstrRotateBased(t *testing.T) {
-	i := rotateBased{'b'}
-	in := "abdec"
-
-	actual := i.apply(in)
-	const expected = "ecabd"
-	if actual != expected {
+	reversed := i.reverseApply(actual)
+	if reversed != in {
 		t.Errorf("invalid result. got '%v' expected '%v'", actual, expected)
 	}
 }
